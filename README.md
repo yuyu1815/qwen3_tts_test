@@ -2,6 +2,19 @@
 
 Python や長いコマンドを意識せず使えるようにした、ローカル専用の音声クローンGUIです。
 
+## 最短セットアップ（コピペ1本）
+
+以下をそのまま実行すると、`ffmpeg` 導入・依存インストール・GUI起動まで一気に実行できます。
+
+```bash
+cd /Users/ryukouokumura/Desktop/boss-workspace/qwen3_tts_test && \
+command -v brew >/dev/null || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && \
+brew install ffmpeg && \
+chmod +x setup_mac.sh start_gui.sh start_gui.command && \
+./setup_mac.sh && \
+./start_gui.sh
+```
+
 ## 使い方（3ステップ）
 
 1. 初回セットアップ
@@ -23,6 +36,12 @@ Python や長いコマンドを意識せず使えるようにした、ローカ�
 - 保存先ディレクトリ（デフォルト: `./outputs`）
 
 生成後、音声プレイヤーで再生できます。ファイル名は `voiceclone_YYYYmmdd_HHMMSS.wav` で自動保存されます。
+
+## モデルについて（重要）
+
+- 本ツールは `qwen_tts` 経由で **Qwen3-TTS をローカル推論** で使います。
+- 初回実行時にモデルがローカルキャッシュへダウンロードされる場合があります。
+- 完全ローカル運用したい場合は、事前にモデルを配置し、GUIの「詳細設定 > モデルID」またはCLIの `--model` にローカルパスを指定してください。
 
 ## よくあるエラー
 
