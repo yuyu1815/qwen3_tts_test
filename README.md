@@ -8,10 +8,10 @@ Python や長いコマンドを意識せず使えるようにした、ローカ�
 このプロジェクトは GPU(MPS) 前提のため、`setup_mac.sh` は Python 3.12 以外を検出すると停止します。
 
 ```bash
-cd /Users/ryukouokumura/Desktop/boss-workspace/qwen3_tts_test && \
+cd qwen3_tts_test && \
 command -v brew >/dev/null || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && \
 brew install ffmpeg && \
-chmod +x setup_mac.sh start_gui.sh start_gui.command && \
+chmod +x scripts/*.sh scripts/*.command *.sh *.command && \
 ./setup_mac.sh && \
 ./start_gui.sh
 ```
@@ -68,13 +68,22 @@ chmod +x setup_mac.sh start_gui.sh start_gui.command && \
 
 ## CLI互換（従来スクリプト）
 
-従来の `voice_clone_batch.py` も引き続き利用できます。
+従来の `src/voice_clone_batch.py` も引き続き利用できます。
 
 ```bash
-python3 voice_clone_batch.py \
+# .venv を有効化してから実行
+source .venv/bin/activate
+python3 src/voice_clone_batch.py \
   --ref-audio myvoice.mp3 \
   --ref-text-file myvoice_ref.txt \
   --text-file input.txt \
   --out out.wav \
   --language Japanese
 ```
+
+## ディレクトリ構成
+- `src/`: Pythonソースコード (GUI, バッチ, コアロジック)
+- `scripts/`: セットアップ・起動用スクリプトの実体
+- `outputs/`: 生成された音声の保存先
+- `setup_mac.sh`: セットアップ用ラッパー
+- `start_gui.sh`: GUI起動用ラッパー

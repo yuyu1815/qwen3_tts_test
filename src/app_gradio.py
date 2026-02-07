@@ -20,7 +20,7 @@ MODEL_PRESETS = {
 }
 
 DEFAULT_MODEL = MODEL_QUALITY
-DEFAULT_OUTPUT_DIR = str((Path(__file__).resolve().parent / "outputs").resolve())
+DEFAULT_OUTPUT_DIR = str((Path(__file__).resolve().parent.parent / "outputs").resolve())
 
 
 def run_generation(
