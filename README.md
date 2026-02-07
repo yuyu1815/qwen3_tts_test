@@ -34,6 +34,7 @@ chmod +x setup_mac.sh start_gui.sh start_gui.command && \
 - 参照文字起こし `ref_text`（必須）
 - 読み上げテキスト（必須）
 - 保存先ディレクトリ（デフォルト: `./outputs`）
+- モデルプリセット（`品質重視` / `速度重視` / `CustomVoice` / `カスタム入力`）
 
 生成後、音声プレイヤーで再生できます。ファイル名は `voiceclone_YYYYmmdd_HHMMSS.wav` で自動保存されます。
 

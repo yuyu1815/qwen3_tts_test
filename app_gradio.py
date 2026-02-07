@@ -6,7 +6,18 @@ import gradio as gr
 
 from voice_clone_core import preflight_check, synthesize_voice_clone, validate_required_inputs
 
-DEFAULT_MODEL = "Qwen/Qwen3-TTS-12Hz-0.6B-Base"
+MODEL_QUALITY = "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
+MODEL_SPEED = "Qwen/Qwen3-TTS-12Hz-0.6B-Base"
+MODEL_CUSTOM_VOICE = "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
+
+MODEL_PRESETS = {
+    "品質重視 (1.7B-Base)": MODEL_QUALITY,
+    "速度重視 (0.6B-Base)": MODEL_SPEED,
+    "CustomVoice (1.7B-CustomVoice)": MODEL_CUSTOM_VOICE,
+    "カスタム入力": "__custom__",
+}
+
+DEFAULT_MODEL = MODEL_QUALITY
 DEFAULT_OUTPUT_DIR = str((Path(__file__).resolve().parent / "outputs").resolve())
 
 
@@ -64,6 +75,14 @@ def run_generation(
         yield flush(enable_button=True)
 
 
+def apply_model_preset(preset_label: str, current_model_id: str):
+    preset_model = MODEL_PRESETS.get(preset_label, "__custom__")
+    if preset_model == "__custom__":
+        model_value = current_model_id.strip() or DEFAULT_MODEL
+        return gr.update(value=model_value, interactive=True)
+    return gr.update(value=preset_model, interactive=False)
+
+
 def build_ui() -> gr.Blocks:
     with gr.Blocks(title="Voice Clone GUI (macOS)") as demo:
         gr.Markdown("## Voice Clone GUI (macOS)")
@@ -98,12 +117,18 @@ def build_ui() -> gr.Blocks:
                     value=DEFAULT_OUTPUT_DIR,
                 )
                 with gr.Accordion("詳細設定", open=False):
-                    model_id = gr.Textbox(label="モデルID", value=DEFAULT_MODEL)
+                    model_preset = gr.Dropdown(
+                        label="モデルプリセット",
+                        choices=list(MODEL_PRESETS.keys()),
+                        value="品質重視 (1.7B-Base)",
+                    )
+                    model_id = gr.Textbox(label="モデルID", value=DEFAULT_MODEL, interactive=False)
                     device = gr.Dropdown(
                         label="デバイス",
                         choices=["auto", "mps", "cpu", "cuda:0"],
                         value="auto",
                     )
+                    gr.Markdown("モデルを自由入力したい場合はプリセットを `カスタム入力` に切り替えてください。")
 
                 run_button = gr.Button("音声を生成", variant="primary")
                 log_box = gr.Textbox(label="実行ログ", lines=14, interactive=False)
@@ -115,6 +140,11 @@ def build_ui() -> gr.Blocks:
             fn=run_generation,
             inputs=[ref_audio, ref_text, input_text, language, output_dir, model_id, device],
             outputs=[log_box, output_audio, output_path, run_button],
+        )
+        model_preset.change(
+            fn=apply_model_preset,
+            inputs=[model_preset, model_id],
+            outputs=[model_id],
         )
 
     return demo
