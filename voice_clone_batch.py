@@ -1,8 +1,8 @@
-# python voice_clone_batch.py ^
-#   --ref-audio myvoice.mp3 ^
-#   --ref-text-file myvoice_ref.txt ^
-#   --text-file input.txt ^
-#   --out out.wav ^
+# python3 voice_clone_batch.py \
+#   --ref-audio myvoice.mp3 \
+#   --ref-text-file myvoice_ref.txt \
+#   --text-file input.txt \
+#   --out out.wav \
 #   --language Japanese
 
 import argparse
@@ -51,6 +51,25 @@ def concat_with_silence(wavs: list[np.ndarray], sr: int, silence_sec: float = 0.
     return np.concatenate(out, axis=0) if out else np.zeros((0,), dtype=np.float32)
 
 
+def resolve_device(device_arg: str) -> str:
+    if device_arg != "auto":
+        return device_arg
+    if torch.backends.mps.is_available():
+        return "mps"
+    if torch.cuda.is_available():
+        return "cuda:0"
+    return "cpu"
+
+
+def resolve_runtime_params(device: str) -> tuple[torch.dtype, str]:
+    if device.startswith("cuda"):
+        dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+        return dtype, "flash_attention_2"
+    if device == "mps":
+        return torch.float16, "eager"
+    return torch.float32, "eager"
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--ref-audio", required=True, help="参照音声 (mp3/mp4/wav等) パス")
@@ -60,7 +79,7 @@ def main():
     ap.add_argument("--out", required=True, help="出力 wav パス")
     ap.add_argument("--model", default="Qwen/Qwen3-TTS-12Hz-0.6B-Base", help="Voice Clone用 Base モデル")
     ap.add_argument("--language", default="Japanese", help="Japanese / English / auto など")
-    ap.add_argument("--device", default="cuda:0")
+    ap.add_argument("--device", default="auto", help="auto / mps / cpu / cuda:0")
     ap.add_argument("--silence", type=float, default=0.25, help="行間無音秒")
     args = ap.parse_args()
 
@@ -73,15 +92,14 @@ def main():
     if not text_file.exists():
         raise FileNotFoundError(f"text file not found: {text_file}")
 
-    # dtype: bf16 優先（安定寄り）
-    dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+    device = resolve_device(args.device)
+    dtype, attn_impl = resolve_runtime_params(device)
 
-    # flash-attn を使う（sdpaは使わない）
     model = Qwen3TTSModel.from_pretrained(
         args.model,
-        device_map=args.device,
+        device_map=device,
         dtype=dtype,
-        attn_implementation="flash_attention_2",
+        attn_implementation=attn_impl,
     )
 
     with tempfile.TemporaryDirectory() as td:
@@ -115,7 +133,7 @@ def main():
         merged = concat_with_silence(wav_list, out_sr, silence_sec=args.silence)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         sf.write(str(out_path), merged, out_sr)
-        print(f"saved: {out_path} sr={out_sr} dtype={dtype} lines={len(lines)}")
+        print(f"saved: {out_path} sr={out_sr} device={device} attn={attn_impl} dtype={dtype} lines={len(lines)}")
 
 
 if __name__ == "__main__":
